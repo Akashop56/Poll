@@ -10,12 +10,20 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 
 def generate_poll():
     prompt = """
-    Generate a very short, catchy YouTube cricket poll about IPL or Indian Cricket Team.
-    Format: JSON only. 
-    Title: Max 60 chars. 
-    Options: Exactly 4 short options with emojis. 
-    The 4th option must be 'Other (Comment!) 🏏'.
-    """
+You are an expert Indian Cricket content creator for YouTube.
+Generate a highly engaging, short YouTube community text poll about currently trending cricket (IPL, Indian Team, T20, Virat Kohli, MS Dhoni, Rohit Sharma, etc.).
+
+Rules:
+1. Title must be very short, catchy, and easy to read.
+2. Provide EXACTLY 4 options.
+3. Options must be aesthetic, short, and use emojis (e.g., 💛 MS Dhoni (Captain Cool), 💙 Rohit Sharma (Hitman)).
+4. The 4th option should usually be an interaction bait like "🏏 Other (Comment your pick!)" or "State Rivalries (Comment yours!)".
+5. OUTPUT STRICTLY IN JSON FORMAT like this:
+{
+  "title": "Which IPL match is the El Clásico for you?",
+  "options": ["RCB ♥️ vs KKR 💜", "CSK 💛 vs MI 💙", "SRH 🧡 vs RR 💗", "Other (Comment yours!) 🏏"]
+}
+"""
     response = model.generate_content(prompt)
     return json.loads(response.text.replace('```json', '').replace('```', '').strip())
 
