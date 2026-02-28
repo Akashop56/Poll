@@ -3,17 +3,22 @@ name: Daily Cricket Poll
 on:
   schedule:
     - cron: '30 4 * * *' # Roz subah 10 AM IST
-  workflow_dispatch:
+  workflow_dispatch:      # Manual button ke liye
+  push:                   # File save karte hi chalne ke liye
+    branches:
+      - main
 
 jobs:
   post:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - run: |
+      - name: Install Dependencies
+        run: |
           pip install google-generativeai playwright
           playwright install chromium
       - name: Run Bot
