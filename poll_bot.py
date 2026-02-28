@@ -20,7 +20,7 @@ Rules:
   "options": ["RCB ♥️ vs KKR 💜", "CSK 💛 vs MI 💙", "SRH 🧡 vs RR 💗", "Other (Comment yours!) 🏏"]
 }
 """
-    response = client.models.generate_content(model="gemini-1.5-flash-8b", contents=prompt)
+    response = client.models.generate_content(model="gemini-1.5-flash", contents=prompt)
     json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
     return json.loads(json_match.group())
 
