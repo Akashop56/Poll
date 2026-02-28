@@ -25,37 +25,46 @@ Rules:
 }
 """
     response = model.generate_content(prompt)
-    return json.loads(response.text.replace('```json', '').replace('```', '').strip())
+    clean_json = response.text.strip().replace('```json', '').replace('```', '')
+    return json.loads(clean_json)
 
 def post_to_youtube():
-    poll = generate_poll()
-    cookies = json.loads(os.environ["YOUTUBE_COOKIES"])
+    try:
+        poll = generate_poll()
+        cookies = json.loads(os.environ["YOUTUBE_COOKIES"])
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        context.add_cookies(cookies)
-        page = context.new_page()
+        with sync_playwright() as p:
+            # Browser thoda slow chalayenge taaki YouTube bot na samjhe
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+            context.add_cookies(cookies)
+            page = context.new_page()
 
-        # YouTube Community Page par jana
-        page.goto("https://www.youtube.com/community")
-        time.sleep(5)
+            print("Opening YouTube Community...")
+            page.goto("https://www.youtube.com/community", wait_until="networkidle")
+            time.sleep(5)
 
-        # Poll Button par click (Selectors may vary, but these are standard)
-        page.click("text=Poll") # Ya fir 'Text poll' selector
-        time.sleep(2)
+            # Poll button dhundna (YouTube naya interface)
+            print("Clicking Poll Button...")
+            page.get_by_label("Create a text poll").click()
+            time.sleep(2)
 
-        # Title aur Options bharna
-        page.fill('placeholder="Ask a question..."', poll['title'])
-        inputs = page.query_selector_all('input[placeholder="Add option"]')
-        for i, opt in enumerate(poll['options']):
-            inputs[i].fill(opt)
+            # Question bharna
+            page.get_by_placeholder("Ask a question").fill(poll['title'])
+            
+            # Options bharna
+            options_inputs = page.query_selector_all('input[placeholder="Add option"]')
+            for i, opt in enumerate(poll['options'][:4]):
+                options_inputs[i].fill(opt)
 
-        # Post Button dabana
-        page.click("text=Post")
-        print(f"Successfully posted: {poll['title']}")
-        time.sleep(2)
-        browser.close()
+            # Post Button
+            print("Posting...")
+            page.get_by_label("Post").click()
+            time.sleep(3)
+            print("Successfully Posted!")
+            browser.close()
+    except Exception as e:
+        print(f"Galti hui bhai: {e}")
 
 if __name__ == "__main__":
     post_to_youtube()
