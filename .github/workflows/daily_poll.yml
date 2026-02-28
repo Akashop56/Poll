@@ -2,9 +2,9 @@ name: Daily Cricket Poll
 
 on:
   schedule:
-    - cron: '30 4 * * *' # Roz subah 10 AM IST par chalega
-  workflow_dispatch:      # Aap manual button se chala sakein
-  push:                   # File save karte hi test karne ke liye
+    - cron: '30 4 * * *' # Roz subah 10 AM IST
+  workflow_dispatch:      # Manual chalu karne ke liye
+  push:                   # Code save karte hi test karne ke liye
     branches:
       - main
       - master
@@ -18,11 +18,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11' # Python 3.11 use karna best hai ab
           
       - name: Install Dependencies
         run: |
-          pip install google-generativeai playwright
+          pip install google-genai playwright # Naya google-genai package
           playwright install --with-deps chromium
           
       - name: Run Bot
