@@ -1,16 +1,15 @@
-import google.generativeai as genai
+from google import genai
 import json
 import os
 import time
 import re
 from playwright.sync_api import sync_playwright
 
-# AI Setup
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Naya AI Setup (2026 Update)
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 def generate_poll():
-    # Aapka Favorite Prompt yahan hai
+    # Aapka Favorite Custom Prompt
     prompt = """
     You are an expert Indian Cricket content creator for YouTube.
     Generate a highly engaging, short YouTube community text poll about currently trending cricket (IPL, Indian Team, T20, Virat Kohli, MS Dhoni, Rohit Sharma, etc.).
@@ -26,18 +25,30 @@ def generate_poll():
       "options": ["RCB ♥️ vs KKR 💜", "CSK 💛 vs MI 💙", "SRH 🧡 vs RR 💗", "Other (Comment yours!) 🏏"]
     }
     """
-    response = model.generate_content(prompt)
-    # JSON nikalne ke liye safety filter
-    json_text = re.search(r'\{.*\}', response.text, re.DOTALL).group()
-    return json.loads(json_text)
+    
+    # Naye model 'gemini-2.0-flash' ka use
+    response = client.models.generate_content(
+        model="gemini-2.0-flash", 
+        contents=prompt
+    )
+    
+    # JSON nikalne ke liye safety regex
+    json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
+    if json_match:
+        return json.loads(json_match.group())
+    else:
+        raise ValueError("AI ne sahi JSON format nahi diya.")
 
 def post_to_youtube():
     try:
         poll = generate_poll()
+        print(f"Poll Ready: {poll['title']}")
+        
         cookies_json = os.environ["YOUTUBE_COOKIES"]
         cookies = json.loads(cookies_json)
 
         with sync_playwright() as p:
+            # Headless mode mein browser chalana
             browser = p.chromium.launch(headless=True)
             context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
             context.add_cookies(cookies)
@@ -45,28 +56,32 @@ def post_to_youtube():
 
             print("Opening YouTube Community Tab...")
             page.goto("https://www.youtube.com/community", wait_until="networkidle")
-            time.sleep(5)
+            time.sleep(10) # 10 seconds ka wait taaki bada channel aaram se load ho
 
-            print(f"Creating Poll: {poll['title']}")
-            # Poll button par click
+            # Poll button par click karna
+            print("Clicking Poll Button...")
             page.get_by_label("Create a text poll").click()
-            time.sleep(2)
+            time.sleep(3)
 
-            # Question fill karna
+            # Question bharna
+            print("Entering Question and Options...")
             page.get_by_placeholder("Ask a question").fill(poll['title'])
             
-            # Options fill karna
+            # Options bharna
             inputs = page.query_selector_all('input[placeholder="Add option"]')
             for i, opt in enumerate(poll['options'][:4]):
                 inputs[i].fill(opt)
 
-            # Post Button
+            # Post karna
+            print("Clicking Post...")
             page.get_by_label("Post").click()
             time.sleep(5)
-            print("Successfully Posted on YouTube!")
+            
+            print("Success! Aapka poll YouTube par post ho gaya hai.")
             browser.close()
+            
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Galti hui: {e}")
 
 if __name__ == "__main__":
     post_to_youtube()
